@@ -1,147 +1,158 @@
 <!DOCTYPE html>
 <html>
+
 <body>
-<div id="camera-view-container" style="width: 100%; height: 60vh"></div>
-<textarea id="results" style="width: 100%; min-height: 10vh; font-size: 3vmin; overflow: auto" disabled></textarea>
-<script src="https://cdn.jsdelivr.net/npm/dynamsoft-barcode-reader-bundle@10.4.2002/dist/dbr.bundle.js"></script>
-<script>
-  Dynamsoft.License.LicenseManager.initLicense("DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAxODM2MjY5LVRYbFhaV0pRY205cSIsIm1haW5TZXJ2ZXJVUkwiOiJodHRwczovL21sdHMuZHluYW1zb2Z0LmNvbSIsIm9yZ2FuaXphdGlvbklEIjoiMTAxODM2MjY5Iiwic3RhbmRieVNlcnZlclVSTCI6Imh0dHBzOi8vc2x0cy5keW5hbXNvZnQuY29tIiwiY2hlY2tDb2RlIjotOTk1MTAxNjR9");
-  Dynamsoft.Core.CoreModule.loadWasm(["dbr"]);
-  (async () => {
-    let cvRouter = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+  <div id="camera-view-container" style="width: 100%; height: 60vh"></div>
+  <textarea id="results" style="width: 100%; min-height: 10vh; font-size: 3vmin; overflow: auto" disabled></textarea>
+  <script src="https://cdn.jsdelivr.net/npm/dynamsoft-barcode-reader-bundle@10.4.2002/dist/dbr.bundle.js"></script>
+  <script>
+    Dynamsoft.License.LicenseManager.initLicense("DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAxODM2MjY5LVRYbFhaV0pRY205cSIsIm1haW5TZXJ2ZXJVUkwiOiJodHRwczovL21sdHMuZHluYW1zb2Z0LmNvbSIsIm9yZ2FuaXphdGlvbklEIjoiMTAxODM2MjY5Iiwic3RhbmRieVNlcnZlclVSTCI6Imh0dHBzOi8vc2x0cy5keW5hbXNvZnQuY29tIiwiY2hlY2tDb2RlIjotOTk1MTAxNjR9");
+    Dynamsoft.Core.CoreModule.loadWasm(["dbr"]);
+    (async () => {
+      let cvRouter = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
 
-    let cameraView = await Dynamsoft.DCE.CameraView.createInstance();
-    let cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
-    document.querySelector("#camera-view-container").append(cameraView.getUIElement());
-    cvRouter.setInput(cameraEnhancer);
+      let cameraView = await Dynamsoft.DCE.CameraView.createInstance();
+      let cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
+      cameraEnhancer.setScanRegion({
+        x: 25,
+        y: 25,
+        width: 50,
+        height: 50,
+        isMeasuredInPercentage: true,
+      });
+      document.querySelector("#camera-view-container").append(cameraView.getUIElement());
+      cvRouter.setInput(cameraEnhancer);
 
-    const resultsContainer = document.querySelector("#results");
-    cvRouter.addResultReceiver({ onCapturedResultReceived: (result) => {
-      if (result.barcodeResultItems?.length) {
-        resultsContainer.textContent = '';
-        for (let item of result.barcodeResultItems) {
-            alert(item.text)
-          resultsContainer.textContent += `${item.formatString}: ${item.text}\n\n`;
+      const resultsContainer = document.querySelector("#results");
+      cvRouter.addResultReceiver({
+        onCapturedResultReceived: (result) => {
+          if (result.barcodeResultItems?.length) {
+            resultsContainer.textContent = '';
+            for (let item of result.barcodeResultItems) {
+              alert(item.text)
+              resultsContainer.textContent += `${item.formatString}: ${item.text}\n\n`;
+            }
+          }
         }
-      }
-    }});
+      });
 
-    let filter = new Dynamsoft.Utility.MultiFrameResultCrossFilter();
-    filter.enableResultCrossVerification("barcode", true);
-    filter.enableResultDeduplication("barcode", true);
-    await cvRouter.addResultFilter(filter);
+      let filter = new Dynamsoft.Utility.MultiFrameResultCrossFilter();
+      filter.enableResultCrossVerification("barcode", true);
+      filter.enableResultDeduplication("barcode", true);
+      await cvRouter.addResultFilter(filter);
 
-    await cameraEnhancer.open();
-     cvRouter.initSettings({
-  "CaptureVisionTemplates": [
-    {
-      "Name": "Dotcode",
-      "ImageROIProcessingNameArray": [
-        "roi_read_dotcode"
-      ],
-      "Timeout": 1000,
-      "MaxParallelTasks":0
-    }
-  ],
-  "TargetROIDefOptions": [
-    {
-      "Name": "roi_read_dotcode",
-      "TaskSettingNameArray": [
-        "task_read_dotcode"
-      ]
-    }
-  ],
-  "BarcodeFormatSpecificationOptions": [
-    {
-      "Name": "format_specification_read_dotcode",
-      "BarcodeFormatIds": [
-        "BF_DOTCODE"
-      ],
-      "MirrorMode": "MM_BOTH"
-    }
-  ],
-  "BarcodeReaderTaskSettingOptions": [
-    {
-      "Name": "task_read_dotcode",
-      "ExpectedBarcodesCount" : 1,
-      "BarcodeFormatIds" : [ "BF_DOTCODE" ],
-      "LocalizationModes": [
-        {
-          "Mode" : "LM_STATISTICS_MARKS"
-        }
-      ],
-      "DeblurModes":
-      [
-        {
-          "Mode": "DM_BASED_ON_LOC_BIN"
-        },
-        {
-          "Mode": "DM_THRESHOLD_BINARIZATION"
-        },
-        {
-          "Mode": "DM_DEEP_ANALYSIS"
-        }
-      ],
-      "BarcodeFormatSpecificationNameArray": [
-        "format_specification_read_dotcode"
-      ],
-      "SectionImageParameterArray": [
-        {
-          "Section": "ST_REGION_PREDETECTION",
-          "ImageParameterName": "ip_read_dotcode"
-        },
-        {
-          "Section": "ST_BARCODE_LOCALIZATION",
-          "ImageParameterName": "ip_read_dotcode"
-        },
-        {
-          "Section": "ST_BARCODE_DECODING",
-          "ImageParameterName": "ip_read_dotcode"
-        }
-      ]
-    }
-  ],
-  "ImageParameterOptions": [
-    {
-      "Name": "ip_read_dotcode",
-      "BinarizationModes": [
-        {
-          "Mode": "BM_LOCAL_BLOCK",
-          "BlockSizeX": 15,
-          "BlockSizeY": 15,
-          "EnableFillBinaryVacancy": 0,
-          "ThresholdCompensation": 25
-        },
-        {
-          "Mode": "BM_LOCAL_BLOCK",
-          "BlockSizeX": 21,
-          "BlockSizeY": 21,
-          "EnableFillBinaryVacancy": 0,
-          "ThresholdCompensation": 25,
-          "MorphOperation":"Erode",
-          "MorphOperationKernelSizeX":5,
-          "MorphOperationKernelSizeY":5,
-          "MorphShape":"Ellipse"
-        }
-      ],
-      "GrayscaleEnhancementModes": [
-        {
-          "Mode": "GEM_GENERAL"
-        }
-      ],
-      "GrayscaleTransformationModes": [
-        {
-          "Mode": "GTM_ORIGINAL"
-        },
-        {
-          "Mode": "GTM_INVERTED"
-        }
-      ]
-    }
-  ]
-})
-    await cvRouter.startCapturing("Dotcode");
-  })();
-</script>
+      await cameraEnhancer.open();
+      cvRouter.initSettings({
+        "CaptureVisionTemplates": [
+          {
+            "Name": "Dotcode",
+            "ImageROIProcessingNameArray": [
+              "roi_read_dotcode"
+            ],
+            "Timeout": 1000,
+            "MaxParallelTasks": 0
+          }
+        ],
+        "TargetROIDefOptions": [
+          {
+            "Name": "roi_read_dotcode",
+            "TaskSettingNameArray": [
+              "task_read_dotcode"
+            ]
+          }
+        ],
+        "BarcodeFormatSpecificationOptions": [
+          {
+            "Name": "format_specification_read_dotcode",
+            "BarcodeFormatIds": [
+              "BF_DOTCODE"
+            ],
+            "MirrorMode": "MM_BOTH"
+          }
+        ],
+        "BarcodeReaderTaskSettingOptions": [
+          {
+            "Name": "task_read_dotcode",
+            "ExpectedBarcodesCount": 1,
+            "BarcodeFormatIds": ["BF_DOTCODE"],
+            "LocalizationModes": [
+              {
+                "Mode": "LM_STATISTICS_MARKS"
+              }
+            ],
+            "DeblurModes":
+              [
+                {
+                  "Mode": "DM_BASED_ON_LOC_BIN"
+                },
+                {
+                  "Mode": "DM_THRESHOLD_BINARIZATION"
+                },
+                {
+                  "Mode": "DM_DEEP_ANALYSIS"
+                }
+              ],
+            "BarcodeFormatSpecificationNameArray": [
+              "format_specification_read_dotcode"
+            ],
+            "SectionImageParameterArray": [
+              {
+                "Section": "ST_REGION_PREDETECTION",
+                "ImageParameterName": "ip_read_dotcode"
+              },
+              {
+                "Section": "ST_BARCODE_LOCALIZATION",
+                "ImageParameterName": "ip_read_dotcode"
+              },
+              {
+                "Section": "ST_BARCODE_DECODING",
+                "ImageParameterName": "ip_read_dotcode"
+              }
+            ]
+          }
+        ],
+        "ImageParameterOptions": [
+          {
+            "Name": "ip_read_dotcode",
+            "BinarizationModes": [
+              {
+                "Mode": "BM_LOCAL_BLOCK",
+                "BlockSizeX": 15,
+                "BlockSizeY": 15,
+                "EnableFillBinaryVacancy": 0,
+                "ThresholdCompensation": 25
+              },
+              {
+                "Mode": "BM_LOCAL_BLOCK",
+                "BlockSizeX": 21,
+                "BlockSizeY": 21,
+                "EnableFillBinaryVacancy": 0,
+                "ThresholdCompensation": 25,
+                "MorphOperation": "Erode",
+                "MorphOperationKernelSizeX": 5,
+                "MorphOperationKernelSizeY": 5,
+                "MorphShape": "Ellipse"
+              }
+            ],
+            "GrayscaleEnhancementModes": [
+              {
+                "Mode": "GEM_GENERAL"
+              }
+            ],
+            "GrayscaleTransformationModes": [
+              {
+                "Mode": "GTM_ORIGINAL"
+              },
+              {
+                "Mode": "GTM_INVERTED"
+              }
+            ]
+          }
+        ]
+      })
+      await cvRouter.startCapturing("Dotcode");
+    })();
+  </script>
 </body>
+
 </html>
