@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<body>
+<div id="camera-view-container" style="width: 100%; height: 60vh"></div>
+<textarea id="results" style="width: 100%; min-height: 10vh; font-size: 3vmin; overflow: auto" disabled></textarea>
+<script src="https://cdn.jsdelivr.net/npm/dynamsoft-barcode-reader-bundle@10.4.3100/dist/dbr.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+<script>
+  Dynamsoft.License.LicenseManager.initLicense("DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAxODM2MjY5LU1UQXhPRE0yTWpZNUxYZGxZaTFVY21saGJGQnliMm8iLCJtYWluU2VydmVyVVJMIjoiaHR0cHM6Ly9tbHRzLmR5bmFtc29mdC5jb20vIiwib3JnYW5pemF0aW9uSUQiOiIxMDE4MzYyNjkiLCJzdGFuZGJ5U2VydmVyVVJMIjoiaHR0cHM6Ly9zbHRzLmR5bmFtc29mdC5jb20vIiwiY2hlY2tDb2RlIjotMjAxNjg4NDc4M30=");
+   Dynamsoft.License.LicenseManager.setDeviceFriendlyName('sonu sood')
+  Dynamsoft.Core.CoreModule.loadWasm(["dbr"]);
+
+  (async () => {
+    let cvRouter = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+
+    let cameraView = await Dynamsoft.DCE.CameraView.createInstance();
+    let cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(cameraView);
+    document.querySelector("#camera-view-container").append(cameraView.getUIElement());
+    cvRouter.setInput(cameraEnhancer);
+
+    const resultsContainer = document.querySelector("#results");
+    cvRouter.addResultReceiver({ onCapturedResultReceived: (result) => {
+      if (result.barcodeResultItems?.length) {
+        resultsContainer.textContent = '';
+        for (let item of result.barcodeResultItems) {
+          resultsContainer.textContent += `${item.formatString}: ${item.text}\n\n`;
+        }
+      }
+    }});
+
+    let filter = new Dynamsoft.Utility.MultiFrameResultCrossFilter();
+    filter.enableResultCrossVerification("barcode", true);
+    filter.enableResultDeduplication("barcode", true);
+    await cvRouter.addResultFilter(filter);
+
+    await cameraEnhancer.open();
+    await cvRouter.startCapturing("ReadSingleBarcode");
+  })();
+</script>
+</body>
+</html>
